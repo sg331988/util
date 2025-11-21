@@ -1,0 +1,136 @@
+package gw.rest.ext.pc.admin.v1.organization
+ 
+uses gw.api.json.JsonObject
+uses gw.api.modules.rest.framework.v1.config.ApiConfiguration
+uses gw.api.modules.rest.framework.v1.json.DataAttributes
+uses gw.api.modules.rest.framework.v1.query.filters.RestQueryFilter
+uses gw.rest.core.pc.admin.v1.organization.OrganizationsCoreResource
+ 
+@Export
+class OrganizationsExtResource extends OrganizationsCoreResource {
+ 
+  override function getCustomFilters(config : ApiConfiguration) : Map<String, RestQueryFilter> {
+    return {
+        "producerOnly" -> new ProducerFilter()
+    }
+  }
+  override function createMinimalChildElement(attr: DataAttributes) : Object {
+    if(attr.getObject("contact")!=null) {
+      var org = super.createMinimalChildElement(attr);
+      var contactJson = attr.getObject("contact")
+      var subTypeObject : JsonObject = contactJson.getObject("subtype")
+      var subType = subTypeObject.getString("code");
+      var primaryAddressObject : JsonObject = contactJson.getObject("primaryAddress")
+      if (subType == "company") {
+        var usrContact : Company = new Company(this.getBundle());
+        if (contactJson.getString("companyName") != null) {
+          usrContact.Name = contactJson.getString("companyName");
+        }
+        if (contactJson.getString("emailAddress1") != null) {
+          usrContact.EmailAddress1 = contactJson.getString("emailAddress1");
+        }
+        if (contactJson.getString("emailAddress2") != null) {
+          usrContact.EmailAddress2 = contactJson.getString("emailAddress2");
+        }
+        if (contactJson.getString("externalId") != null) {
+          usrContact.ExternalID = contactJson.getString("externalId");
+        }
+        if (contactJson.getString("addressBookUID") != null) {
+          usrContact.AddressBookUID = contactJson.getString("addressBookUID");
+        }
+        if (contactJson.getString("taxId") != null) {
+          usrContact.TaxID = contactJson.getString("taxId");
+        }
+        if (primaryAddressObject != null && contactJson != null) {
+          var primaryAddress = mapContactAddress(primaryAddressObject, contactJson);
+          usrContact.PrimaryAddress = primaryAddress;
+        }
+        var oldContact = (org as Organization).Contact;
+        (org as Organization).Contact = usrContact;
+        oldContact.remove()
+      } else {
+        var usrContact : UserContact = new UserContact(this.getBundle())
+        if (contactJson.getString("firstName") != null) {
+          usrContact.FirstName = contactJson.getString("firstName");
+        }
+        if (contactJson.getString("lastName") != null) {
+          usrContact.LastName = contactJson.getString("lastName");
+        }
+        if (contactJson.getString("emailAddress1") != null) {
+          usrContact.EmailAddress1 = contactJson.getString("emailAddress1");
+        }
+        if (contactJson.getString("emailAddress2") != null) {
+          usrContact.EmailAddress2 = contactJson.getString("emailAddress2");
+        }
+        if (contactJson.getString("pronounPossessive") != null) {
+          usrContact.PronounPossessive = contactJson.getString("pronounPossessive");
+        }
+        if (contactJson.getString("externalId") != null) {
+          usrContact.ExternalID = contactJson.getString("externalId");
+        }
+        if (contactJson.getDate("dateOfBirth") != null) {
+          usrContact.DateOfBirth = contactJson.getDate("dateOfBirth");
+        }
+        if (contactJson.getString("brokerId_Ext") != null) {
+          usrContact.BrokerID_Ext = contactJson.getString("brokerId_Ext");
+        }
+        if (contactJson.getString("addressBookUID") != null) {
+          usrContact.AddressBookUID = contactJson.getString("addressBookUID");
+        }
+        if (contactJson.getString("taxId") != null) {
+          usrContact.TaxID = contactJson.getString("taxId");
+        }
+        if (contactJson.getString("pronounSubjective") != null) {
+          usrContact.PronounSubjective = contactJson.getString("pronounSubjective");
+        }
+        if (primaryAddressObject != null && contactJson != null) {
+          var primaryAddress = mapContactAddress(primaryAddressObject, contactJson);
+          usrContact.PrimaryAddress = primaryAddress;
+        }
+      }
+      return org;
+    } else {
+      var org = new OrganizationsCoreResource().createMinimalChildElement(attr)
+      return org
+    }
+  }
+  private function mapContactAddress(primaryAddressObject:JsonObject,contactJson:JsonObject):Address{
+    var primaryAddress = new Address(this.getBundle());
+    if(primaryAddressObject != null) {
+      if (primaryAddressObject.getString("city") != null) {
+        primaryAddress.City = primaryAddressObject.getString("city");
+      }
+      if (primaryAddressObject.getString("postalCode") != null) {
+        primaryAddress.PostalCode = primaryAddressObject.getString("postalCode");
+      }
+      if (primaryAddressObject.getString("addressLine1") != null) {
+        primaryAddress.AddressLine1 = primaryAddressObject.getString("addressLine1");
+      }
+      if (primaryAddressObject.getString("addressLine2") != null) {
+        primaryAddress.AddressLine2 = primaryAddressObject.getString("addressLine2");
+      }
+      if (primaryAddressObject.getString("addressLine3") != null) {
+        primaryAddress.AddressLine3 = primaryAddressObject.getString("addressLine3");
+      }
+      if (primaryAddressObject.getString("county") != null) {
+        primaryAddress.County = primaryAddressObject.getString("county");
+      }
+      if (primaryAddressObject.getString("description") != null) {
+        primaryAddress.Description = primaryAddressObject.getString("description");
+      }
+      if (primaryAddressObject.getObject("addressType") != null) {
+        var addressType = primaryAddressObject.getObject("addressType").values()
+        if (addressType.HasElements) {
+          primaryAddress.AddressType = AddressType.get(addressType.first().toString())
+        }
+      }
+      if (primaryAddressObject.getObject("state") != null) {
+        var stateObject = primaryAddressObject.getObject("state").values()
+        if (stateObject.HasElements) {
+          primaryAddress.State = State.get(stateObject.first().toString())
+        }
+      }
+    }
+    return primaryAddress
+  }
+}
